@@ -124,6 +124,7 @@
                 if (stimulusIsVisible) {
                     recordStimulusReactionTime();
                     startTestTrial();
+                    document.getElementsById("instruction").style.display('Press a to end ')
                 }
             }
             else if (event.key ==='a') {
