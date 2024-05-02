@@ -18,7 +18,6 @@ body {
         <p id="count"></p>
         <p id="mean"></p>
         <p id="sd"></p>
-
         <script>
 // if true, the experiment is currently active
 let experimentActive = false;
@@ -50,6 +49,7 @@ function getMean(data) {
     for (let value of data) sum += value;
     return sum / data.length;
 }
+
 
 function getStandardDeviation(data) {
     let mean = getMean(data);
@@ -89,6 +89,7 @@ function setStimulusShapeTriangle() {
     stimulusElement.style.borderLeft = `${size / 2}px solid transparent`;
     stimulusElement.style.borderRight = `${size / 2}px solid transparent`;
     stimulusElement.style.borderBottom = `${size}px solid ${color}`;
+    
 }
 
 function setStimulusShapeSquare() {
@@ -134,9 +135,9 @@ function startTestTrial() {
 }
 
 function showStimulus() {
-    if (chance <= 2) {
+    if (chance == 2 || chance ==1) {
         setStimulusShapeTriangle();
-    } else {
+    } else if (chance == 3 || chance == 4) {
         setStimulusShapeSquare();
     }
     stimulusIsVisible = true;
