@@ -14,7 +14,8 @@
 <h1>Simple Reaction Time Experiment</h1>
 <p id="endMessage" style="display: none;">Sie haben das Experiment beendet. Hier sind Ihre Ergebnisse.</p>
 <p id="endMessage1" style="display: none;">Sie haben das Experiment beendet. Indem Sie 30 Versuche absolviert haben. Hier sind Ihre Ergebnisse.</p>
-<p id="reactionTimeDisplay">Drücken Sie die Leertaste um das Experiment zu starten</p> <!-- Element zur Anzeige der Reaktionszeit -->
+<p id="reactionTimeDisplay">Drücken Sie die Leertaste um das Experiment zu starten</p>
+<p id="roundCounterDisplay">Durchlauf Nummer:</p><!-- Element zur Anzeige der Reaktionszeit -->
 <p id="meanReactionTimeDisplay">Durchschnittliche Reaktionszeit</p> <!-- Element zur Anzeige des Durchschnitts der Reaktionszeit -->
 <p id="standardabweichung">Standardabweichung</p> <!-- Element zur Anzeige des Durchschnitts der Reaktionszeit -->
 <p id="errorCountDisplay">Fehler</p> <!-- Element zur Anzeige der Anzahl der Fehler -->
@@ -35,7 +36,7 @@
     var reactionTimes = [];
     var distances = []; // Array zur Speicherung der Abstände
     var errors = 0;
-    var totalReactions = 0;
+    var totalReactions = -1;
     var stimulusDetected = false;
     var experimentRunning = false;
     var firstClickSkipped = false; // Variable zur Verfolgung des ersten Klicks
@@ -134,7 +135,7 @@
         endTime = new Date().getTime();
         var reactionTime = endTime - startTime;
         reactionTimes.push(reactionTime);
-        totalReactions++;
+        totalReactions++ ;
 
         let meanReactionTime = reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length;
         let stdDev = Math.sqrt(reactionTimes.map(x => Math.pow(x - meanReactionTime, 2)).reduce((a, b) => a + b, 0) / reactionTimes.length);
@@ -144,11 +145,14 @@
 
 
         document.getElementById("reactionTimeDisplay").innerText = "Reaktionszeit: " + reactionTime + " Millisekunden";
+        document.getElementById("roundCounterDisplay").innerText = "Durchlauf: " + totalReactions;
         document.getElementById("meanReactionTimeDisplay").innerText = "Durchschnittliche Reaktionszeit: " + meanReactionTime.toFixed(0) + " Millisekunden";
         document.getElementById("standardabweichung").innerText = "Standardabweichung: " + stdDev.toFixed(0) + " Millisekunden";
         document.getElementById("errorCountDisplay").innerText = "Fehler: " + errors;
         document.getElementById("correlationDisplay").innerText = "Korrelation: " + correlation.toFixed(2);
+
     }
+
 
     function stopExperiment() {
         // Stopp des Experiments
@@ -163,7 +167,7 @@
 
         // Setze die Anzahl der Fehler zurück
         errors = 0;
-        totalReactions = 0;
+        totalReactions = -1;
     }
 
     // Event-Listener zum Starten und Beenden des Experiments
