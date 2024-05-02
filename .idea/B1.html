@@ -12,7 +12,6 @@
 </head>
 <body>
 <h1>Simple Reaction Time Experiment</h1>
-<canvas id="canvas" width="1200" height="400"></canvas>
 <p id="endMessage" style="display: none;">Sie haben das Experiment beendet. Hier sind Ihre Ergebnisse.</p>
 <p id="endMessage1" style="display: none;">Sie haben das Experiment beendet. Indem Sie 30 Versuche absolviert haben. Hier sind Ihre Ergebnisse.</p>
 <p id="reactionTimeDisplay">Drücken Sie die Leertaste um das Experiment zu starten</p> <!-- Element zur Anzeige der Reaktionszeit -->
@@ -20,10 +19,11 @@
 <p id="standardabweichung">Standardabweichung</p> <!-- Element zur Anzeige des Durchschnitts der Reaktionszeit -->
 <p id="errorCountDisplay">Fehler</p> <!-- Element zur Anzeige der Anzahl der Fehler -->
 <p id="correlationDisplay">Korrelation</p> <!-- Element zur Anzeige der Anzahl der Fehler -->
-
+<canvas id="canvas" width="1300" height="400"></canvas>
 
 
 <script>
+
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
     var rectWidth = 100;
@@ -33,87 +33,61 @@
     var stimulusColor = "#ff0000"; // Stimulusfarbe
     var startTime, endTime;
     var reactionTimes = [];
+    var distances = []; // Array zur Speicherung der Abstände
     var errors = 0;
     var totalReactions = 0;
     var stimulusDetected = false;
     var experimentRunning = false;
     var firstClickSkipped = false; // Variable zur Verfolgung des ersten Klicks
 
+    // Funktion zur Berechnung der Korrelation
 
     function calculateCorrelation() {
-        // Array zum Speichern von Abständen und Reaktionszeiten
-        var distances = [];
-        var reactionTimesCopy = reactionTimes.slice(); // Kopie des Arrays, um die Originaldaten nicht zu verändern
-
-        // Schleife durch alle Reaktionen
-        for (var i = 0; i < reactionTimesCopy.length; i++) {
-            // Berechne den Abstand des Stimulus zur Mitte des Bildschirms
-            var distanceToCenter = Math.sqrt(Math.pow(rectX + rectWidth / 2 - canvas.width / 2, 2) + Math.pow(rectY + rectHeight / 2 - canvas.height / 2, 2));
-            // Füge den Abstand und die Reaktionszeit zu den Arrays hinzu
-            distances.push(distanceToCenter);
+        if (reactionTimes.length === 0 || distances.length === 0) {
+            return "Nicht genügend Daten für die Korrelation.";
         }
 
-        // Überprüfe, ob die Arrays gültige Werte enthalten
-        if (distances.length === 0 || reactionTimesCopy.length === 0) {
-            console.error("Fehler: Arrays enthalten keine gültigen Werte.");
-            return NaN;
-        }
+        // Berechne den Durchschnitt der Reaktionszeiten
+        let meanReactionTime = reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length;
+        // Berechne den Durchschnitt der Abstände
+        let meanDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
 
-        // Berechne die Korrelation zwischen den beiden Arrays
-        var correlation = pearsonCorrelation(distances, reactionTimesCopy);
+        // Berechne die Standardabweichung der Reaktionszeiten und der Abstände
+        let reactionTimeDeviation = Math.sqrt(reactionTimes.map(x => Math.pow(x - meanReactionTime, 2)).reduce((a, b) => a + b, 0) / reactionTimes.length);
+        let distanceDeviation = Math.sqrt(distances.map(x => Math.pow(x - meanDistance, 2)).reduce((a, b) => a + b, 0) / distances.length);
+
+        // Berechne die Kovarianz
+        let covariance = 0;
+        for (let i = 0; i < reactionTimes.length; i++) {
+            covariance += (reactionTimes[i] - meanReactionTime) * (distances[i] - meanDistance);
+        }
+        covariance /= reactionTimes.length;
+
+        // Berechne die Korrelation
+        let correlation = covariance / (reactionTimeDeviation * distanceDeviation);
 
         return correlation;
     }
 
-    // Funktion zum Berechnen der Pearson-Korrelation
-    function pearsonCorrelation(x, y) {
-        var sumX = 0;
-        var sumY = 0;
-        var sumXY = 0;
-        var sumXX = 0;
-        var sumYY = 0;
-        var n = x.length;
-
-        for (var i = 0; i < n; i++) {
-            sumX += x[i];
-            sumY += y[i];
-            sumXY += x[i] * y[i];
-            sumXX += x[i] * x[i];
-            sumYY += y[i] * y[i];
-        }
-
-        var numerator = n * sumXY - sumX * sumY;
-        var denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
-
-        if (denominator == 0) {
-            return 0; // Keine Korrelation, wenn der Nenner 0 ist
-        } else {
-            return numerator / denominator;
-        }
-    }
-
     function drawRectangle() {
         // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Zufällige Position für das Rechteck
+        rectX = Math.random() * (canvas.width - rectWidth);
+        rectY = Math.random() * (canvas.height - rectHeight);
 
-            // Zufällige Position für das Rechteck
-            rectX = Math.random() * (canvas.width - rectWidth);
-            rectY = Math.random() * (canvas.height - rectHeight);
+        // Zeichne das Rechteck mit der Hintergrundfarbe initial
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
 
-            // Zeichne das Rechteck mit der Hintergrundfarbe initial
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+        // Startzeit
+        startTime = new Date().getTime();
 
-            // Startzeit
-            startTime = new Date().getTime();
-
-            // Setze experimentRunning auf true
-            experimentRunning = true;
-            // Setze stimulusDetected auf false, um festzulegen, dass kein Rechteck angezeigt wurde
-            stimulusDetected = false;
-
-            calculateCorrelation();
+        // Setze experimentRunning auf true
+        experimentRunning = true;
+        // Setze stimulusDetected auf false, um festzulegen, dass kein Rechteck angezeigt wurde
+        stimulusDetected = false;
     }
 
     // Funktion zur Farbänderung des Rechtecks
@@ -135,8 +109,12 @@
         ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
 
         // Überprüfe, ob Stimulus erkannt wurde
-        if (!stimulusDetected && colorProgress >= 0.5) {
+        if (!stimulusDetected) {
             stimulusDetected = true;
+            let stimulusCenterX = rectX + rectWidth / 2;
+            let screenWidth = canvas.width;
+            let stimulusDistanceToCenter = Math.abs(stimulusCenterX - screenWidth / 2);
+            distances.push(stimulusDistanceToCenter); // Speichere den Abstand zur Mitte
         }
 
         // Überprüfe, ob Zeitlimit für Reaktion erreicht wurde
@@ -145,44 +123,31 @@
             errors++;
             drawRectangle();
             changeColor();
-
         } else {
             // Fortsetzen der Farbänderung des Rechtecks
             requestAnimationFrame(changeColor);
         }
-
     }
 
-    function getMean(data) {
-        let sum = 0;
-        for (let value of data) sum += value;
-        return sum / data.length;
-    }
-
-    function getStandardDeviation(data) {
-        let mean = getMean(data);
-        let squareSum = 0;
-        for (let value of data) squareSum += (value - mean) ** 2;
-        return Math.sqrt(squareSum / data.length);
-    }
-
-
-    function showResults(){
+    function showResults() {
         // Endzeit und Berechnung der Reaktionszeit
         endTime = new Date().getTime();
         var reactionTime = endTime - startTime;
         reactionTimes.push(reactionTime);
         totalReactions++;
 
-        let meanDeltaTime = getMean(reactionTimes);
-        let stdDev = getStandardDeviation(reactionTimes);
+        let meanReactionTime = reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length;
+        let stdDev = Math.sqrt(reactionTimes.map(x => Math.pow(x - meanReactionTime, 2)).reduce((a, b) => a + b, 0) / reactionTimes.length);
 
-        var correlation = calculateCorrelation();
+        // Berechne und zeige die Korrelation
+        let correlation = calculateCorrelation();
 
-        document.getElementById("reactionTimeDisplay").innerText = "Reaktionszeit: " + reactionTime + " milliseconds";
-        document.getElementById("meanReactionTimeDisplay").innerText = "Durchschnittliche Reaktionszeit : " + meanDeltaTime + " milliseconds";
-        document.getElementById("standardabweichung").innerText = "Standardabweichung: " + stdDev + " milliseconds";
-        document.getElementById("correlationDisplay").innerText = "Korrelation zwischen Abstand und Reaktionszeit: " + correlation;
+
+        document.getElementById("reactionTimeDisplay").innerText = "Reaktionszeit: " + reactionTime + " Millisekunden";
+        document.getElementById("meanReactionTimeDisplay").innerText = "Durchschnittliche Reaktionszeit: " + meanReactionTime.toFixed(0) + " Millisekunden";
+        document.getElementById("standardabweichung").innerText = "Standardabweichung: " + stdDev.toFixed(0) + " Millisekunden";
+        document.getElementById("errorCountDisplay").innerText = "Fehler: " + errors;
+        document.getElementById("correlationDisplay").innerText = "Korrelation: " + correlation.toFixed(2);
     }
 
     function stopExperiment() {
@@ -192,37 +157,32 @@
         // Canvas löschen
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        let meanDeltaTime = getMean(reactionTimes);
-        let stdDev = getStandardDeviation(reactionTimes);
-
-        // Leere die Liste der Reaktionszeiten
+        // Leere die Arrays für Reaktionszeiten und Abstände
         reactionTimes = [];
+        distances = [];
 
-        // Setze die Anzahl der Fehler und Gesamtversuche zurück
+        // Setze die Anzahl der Fehler zurück
         errors = 0;
         totalReactions = 0;
-
     }
 
-
-
-    // Event-Listener zum Starten des Experiments
+    // Event-Listener zum Starten und Beenden des Experiments
     document.addEventListener("keydown", function(event) {
         if (event.keyCode == 32 && !experimentRunning) { // Leertaste gedrückt und Experiment nicht aktiv
-            changeColor();
             drawRectangle();
-
+            changeColor();
         }
 
         if (event.keyCode == 32 && experimentRunning) { // Leertaste gedrückt und Experiment aktiv
             showResults();
-            changeColor();
             drawRectangle();
+            changeColor();
         }
+
         // Fehler zählen, wenn keine Stimulus erkannt wurde und Leertaste gedrückt wurde
         if (event.keyCode == 32 && !stimulusDetected && !experimentRunning && firstClickSkipped) {
             errors++;
-            document.getElementById("errorCountDisplay").innerText = "Error Count: " + errors;
+            document.getElementById("errorCountDisplay").innerText = "Fehler: " + errors;
         }
         // Setze firstClickSkipped auf true, nachdem der erste Klick erfolgt ist
         if (event.keyCode == 32 && !firstClickSkipped) {
@@ -233,13 +193,12 @@
             stopExperiment();
             document.getElementById("endMessage").style.display = "block"; // Zeige die Nachricht an
         }
-        if(totalReactions == 30){
+
+        if (totalReactions == 30) {
             stopExperiment();
             document.getElementById("endMessage1").style.display = "block"; // Zeige die Nachricht an
         }
     });
-
-
 
 </script>
 </body>
