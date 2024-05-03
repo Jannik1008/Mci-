@@ -22,6 +22,7 @@ body {
         <p id="sdOrange"></p>
         <p id="sdPurple"></p>
         <p id ="error rate"></p>
+        <p id ="chance"></p>
         <script>
 // if true, the experiment is currently active
 let experimentActive = false;
@@ -36,12 +37,14 @@ let stimulusTimestamp;
 // Used to cancel tests when the experiment ends.
 let testStimulusTimeout;
 
-// recorded reaction times in milliseconds
+// recorded reaction times in milliseconds for orange squares
 let times = [];
+//recorded reaction times in milliseconds for purple squares
 let timesPurple = [];
-let counter = [];
 let errorCounter = [];
 
+//if true, there's currently a timeout for a triangle
+let triangleTimeout = false;
 // DOM elements
 let timeElement = document.getElementById('time');
 let countElement = document.getElementById('countOrange');
@@ -52,7 +55,8 @@ let stdDevElement = document.getElementById('sdOrange');
 let stdDevElementPurple = document.getElementById('sdPurple');
 let instructionElement = document.getElementById('instruction');
 let stimulusElement = document.getElementById('stimulus');
-let errorElement = document.getElementById('error rate')
+let errorElement = document.getElementById('error rate');
+
 let chance = 0;
 //1 und 2 für Dreieck, 3 und 4 für Quadrat
 function getMean(data) {
@@ -70,7 +74,7 @@ function getStandardDeviation(data) {
 }
 
 function clearResults() {
-    timeElement.textContent = '';
+    timeElement.textContent = '0 ms';
     countElement.textContent = '';
     countElementPurple.textContent = '';
     meanElement.textContent = '';
@@ -86,6 +90,8 @@ function showResults() {
 
     let stdDev = getStandardDeviation(times);
     let stdDevPurple = getStandardDeviation(timesPurple);
+
+    timeElement.textContent = '';
 
     countElement.textContent = 'Count(Orange Square): ' + times.length;
     countElementPurple.textContent = 'Count(Purple Square): ' + timesPurple.length;
@@ -138,6 +144,11 @@ function setStimulusShapeTriangle() {
 
     const size = Math.floor(Math.random() * 200) + 100; // random size between 100 and 300
 
+    stimulusElement.style.width = `${size}px`;
+    stimulusElement.style.height = `${size}px`;
+    stimulusElement.style.backgroundColor = 'white';
+
+    stimulusElement.style.backgroundColor = "color";
     stimulusElement.style.width = "0";
     stimulusElement.style.height = "0";
     stimulusElement.style.borderLeft = `${size / 2}px solid transparent`;
@@ -160,7 +171,7 @@ function setStimulusShapeSquare() {
     stimulusElement.style.width = `${size}px`;
     stimulusElement.style.height = `${size}px`;
     stimulusElement.style.backgroundColor = color;
-    stimulusElement.style.border = "none";
+    
 }
 
 function resetStimulusShape() {
@@ -168,8 +179,9 @@ function resetStimulusShape() {
     stimulusElement.style.width = "0";
     stimulusElement.style.height = "0";
     stimulusElement.style.borderLeft = "0";
-    stimulusElement.style.borderRight = "0";
+    stimulusElement.style.borderRight = "0"; 
     stimulusElement.style.borderBottom = "0";
+    //stimulusElement.style.backgroundColor = "white";
 
    
 }
@@ -180,24 +192,35 @@ function getRandomInteger(min, max) {
   return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
 }
 
+function zufaelligeZahl() {
+    return Math.floor(Math.random()*4) + 1;
+}
+
 function startTestTrial() {
     // reset the stimulus
     resetStimulusShape();
     stimulusIsVisible = false;
 
-    chance = getRandomInteger(1, 4);
+    chance = zufaelligeZahl();
 
 
     // schedule the stimulus to appear after a random amount of time
     let timeToWaitInSeconds = Math.random() * 4 + 2; // 2 - 6s
-    testStimulusTimeout = setTimeout(showStimulus, timeToWaitInSeconds * 1000);
+    setTimeout(showStimulus, timeToWaitInSeconds * 1000);
 }
 
 function showStimulus() {
-    if (chance == 2 || chance == 1) {
+    if (chance === 2 || chance === 1) {
         setStimulusShapeTriangle();
+        triangleTimeout = true;
+        if(experimentActive == true){
+            testStimulusTimeout = setTimeout(startTestTrial, 6000);
+        }
+        else {
+            return;
+        }
     } 
-    else if (chance == 3 || chance == 4) {
+    else if (chance === 3 || chance === 4) {
         setStimulusShapeSquare();
     }
     stimulusIsVisible = true;
@@ -245,13 +268,14 @@ window.addEventListener('keydown', (event) => {
 
         if (stimulusIsVisible) {
 
-            if(chance == 1 || chance == 2) {
+            if(chance === 1 || chance === 2) {
                 errorCounter++;
+                timeElement.textContent = "Error!";
             }
-            else if(chance == 3) {
+            else if(chance === 3) {
                 recordStimulusReactionTime(timesPurple);
             }
-            else if(chance == 4) {
+            else if(chance === 4) {
                 recordStimulusReactionTime(times);
             }
             // start next trial
@@ -263,7 +287,9 @@ window.addEventListener('keydown', (event) => {
             stopExperiment();
         }
     }  else if (event.key === 'b') {
-        // ...
+        if(triangleTimeout) {
+            startTestTrial();
+        }
     }
 });
       </script>
