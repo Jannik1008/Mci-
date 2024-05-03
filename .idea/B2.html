@@ -12,7 +12,8 @@ body {
     </head>
    <body>
         <h1 id="title">Decision Reaction Time Study</h1>
-        <h2 id="instruction">Press space to start!</h2>
+        <h2 id="instruction">Press 'space' to start!</h2>
+        <h2 id="instruction2">React to squares and ignore triangles!</h2>
         <p id="time"></p>
         <div id="stimulus"></div>
         <p id="countOrange"></p>
@@ -56,6 +57,7 @@ let stdDevElementPurple = document.getElementById('sdPurple');
 let instructionElement = document.getElementById('instruction');
 let stimulusElement = document.getElementById('stimulus');
 let errorElement = document.getElementById('error rate');
+let instructionElement2 = document.getElementById('instruction2')
 
 let chance = 0;
 //1 und 2 für Dreieck, 3 und 4 für Quadrat
@@ -124,12 +126,8 @@ function showResults() {
     stdDevElementPurple.textContent = 'SD(Purple Square)' + Math.round(stdDevPurple) + ' ms';
     }
 
-    if(errorCounter == 0) {
-        errorElement.textContent = '';
-    }
-    else {
-        errorElement.textContent = 'Error rate(Triangles): ' + errorCounter;
-    }
+    errorElement.textContent = 'Error rate(Triangles): ' + errorCounter;
+    
 }
 
 //creating a triangle
@@ -200,13 +198,14 @@ function startTestTrial() {
     // reset the stimulus
     resetStimulusShape();
     stimulusIsVisible = false;
-
+    triangleTimeout = false;
+    clearTimeout(testStimulusTimeout);
     chance = zufaelligeZahl();
 
 
     // schedule the stimulus to appear after a random amount of time
     let timeToWaitInSeconds = Math.random() * 4 + 2; // 2 - 6s
-    setTimeout(showStimulus, timeToWaitInSeconds * 1000);
+    testStimulusTimeout = setTimeout(showStimulus, timeToWaitInSeconds * 1000);
 }
 
 function showStimulus() {
@@ -214,7 +213,8 @@ function showStimulus() {
         setStimulusShapeTriangle();
         triangleTimeout = true;
         if(experimentActive == true){
-            testStimulusTimeout = setTimeout(startTestTrial, 6000);
+            randomNumber = Math.random()*4 + 3;
+            setTimeout(startTestTrial, randomNumber*1000);
         }
         else {
             return;
@@ -235,8 +235,8 @@ function recordStimulusReactionTime(timeslist) {
 
 function startExperiment() {
     clearResults(); // clear results of any previous tests
-    instructionElement.textContent = "Press space when a square appears and ignore triangles! Press 'a' for results!";
-
+    instructionElement.textContent = "Press 'space' when a square appears and ignore triangles! Press 'a' for results!";
+    instructionElement2.textContent = "Press 'b' when a triangle appears to skip forward."
     // reset data and start tests
     times = [];
     timesPurple = [];
@@ -248,12 +248,14 @@ function startExperiment() {
 function stopExperiment() {
     // cancel any ongoing tests
     clearTimeout(testStimulusTimeout);
+    clearTimeout(triangleTimeout);
     stimulusIsVisible = false;
     experimentActive = false;
     resetStimulusShape();
     // reset instruction and show results
     instruction.textContent = 'Press space to start!';
     showResults();
+    resetStimulusShape();
 }
 
 window.addEventListener('keydown', (event) => {
@@ -285,11 +287,15 @@ window.addEventListener('keydown', (event) => {
         if (experimentActive) {
             // stop the experiment and show results
             stopExperiment();
+            stimulusElement.textContent = '';
         }
     }  else if (event.key === 'b') {
-        if(triangleTimeout) {
+        if(experimentActive) {
+           if(triangleTimeout) {
             startTestTrial();
+        } 
         }
+        
     }
 });
       </script>
