@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>Human Capabilities - Binary Reaction test</title>
+        <title>Decision Reaction Time Study</title>
         <style>
 body {
     font-family: sans-serif;
@@ -11,13 +11,17 @@ body {
         </style>
     </head>
    <body>
-        <h1 id="title">User Study</h1>
+        <h1 id="title">Decision Reaction Time Study</h1>
         <h2 id="instruction">Press space to start!</h2>
         <p id="time"></p>
         <div id="stimulus"></div>
-        <p id="count"></p>
-        <p id="mean"></p>
-        <p id="sd"></p>
+        <p id="countOrange"></p>
+        <p id="countPurple"></p>
+        <p id="meanOrange"></p>
+        <p id="meanPurple"></p>
+        <p id="sdOrange"></p>
+        <p id="sdPurple"></p>
+        <p id ="error rate"></p>
         <script>
 // if true, the experiment is currently active
 let experimentActive = false;
@@ -34,14 +38,21 @@ let testStimulusTimeout;
 
 // recorded reaction times in milliseconds
 let times = [];
+let timesPurple = [];
+let counter = [];
+let errorCounter = [];
 
 // DOM elements
 let timeElement = document.getElementById('time');
-let countElement = document.getElementById('count');
-let meanElement = document.getElementById('mean');
-let stdDevElement = document.getElementById('sd');
+let countElement = document.getElementById('countOrange');
+let countElementPurple = document.getElementById('countPurple');
+let meanElement = document.getElementById('meanOrange');
+let meanElementPurple = document.getElementById('meanPurple');
+let stdDevElement = document.getElementById('sdOrange');
+let stdDevElementPurple = document.getElementById('sdPurple');
 let instructionElement = document.getElementById('instruction');
 let stimulusElement = document.getElementById('stimulus');
+let errorElement = document.getElementById('error rate')
 let chance = 0;
 //1 und 2 für Dreieck, 3 und 4 für Quadrat
 function getMean(data) {
@@ -61,24 +72,67 @@ function getStandardDeviation(data) {
 function clearResults() {
     timeElement.textContent = '';
     countElement.textContent = '';
+    countElementPurple.textContent = '';
     meanElement.textContent = '';
+    meanElementPurple.textContent = '';
     stdDevElement.textContent = '';
+    stdDevElementPurple.textContent = '';
+    errorElement.textContent = '';
 }
 
 function showResults() {
     let meanDeltaTime = getMean(times);
-    let stdDev = getStandardDeviation(times);
+    let meanDeltaTimePurple = getMean(timesPurple);
 
-    countElement.textContent = 'Count: ' + times.length;
-    meanElement.textContent = 'Mean: ' + Math.round(meanDeltaTime) + ' ms';
-    stdDevElement.textContent = 'SD: ' + Math.round(stdDev) + ' ms';
+    let stdDev = getStandardDeviation(times);
+    let stdDevPurple = getStandardDeviation(timesPurple);
+
+    countElement.textContent = 'Count(Orange Square): ' + times.length;
+    countElementPurple.textContent = 'Count(Purple Square): ' + timesPurple.length;
+
+    //Displaying the mean
+    if(times.length == 0) {
+        meanElement.textContent = '';
+    }
+    else {
+        meanElement.textContent = 'Mean(Orange Square): ' + Math.round(meanDeltaTime) + ' ms';
+    }
+    if(timesPurple.length == 0) {
+        meanElementPurple.textContent = '';
+    }
+    else {
+        meanElementPurple.textContent = 'Mean(purple Square)' + Math.round(meanDeltaTimePurple) + 'ms';
+    }
+    
+    //Displaying the Standard Deviation
+    if(times.length == 0) {
+        stdDevElement.textContent = '';
+    }
+    else {
+        stdDevElement.textContent = 'SD(Orange Square): ' + Math.round(stdDev) + ' ms';
+    }
+    if(timesPurple.length == 0) {
+        stdDevElementPurple.textContent = '';
+    }
+    else {
+    stdDevElementPurple.textContent = 'SD(Purple Square)' + Math.round(stdDevPurple) + ' ms';
+    }
+
+    if(errorCounter == 0) {
+        errorElement.textContent = '';
+    }
+    else {
+        errorElement.textContent = 'Error rate(Triangles): ' + errorCounter;
+    }
 }
 
+//creating a triangle
 function setStimulusShapeTriangle() {
     let color;
     if (chance == 1) {
         color = 'purple';
-    } else {
+    }
+    else if (chance == 2) {
         color = 'orange';
     }
 
@@ -92,11 +146,13 @@ function setStimulusShapeTriangle() {
     
 }
 
+//creating a square
 function setStimulusShapeSquare() {
     let color;
     if (chance == 3) {
         color = 'purple';
-    } else {
+    } 
+    else if (chance == 4) {
         color = 'orange';
     }
     const size = Math.floor(Math.random() * 200) + 100; // random size between 100 and 300
@@ -108,11 +164,14 @@ function setStimulusShapeSquare() {
 }
 
 function resetStimulusShape() {
+    
     stimulusElement.style.width = "0";
     stimulusElement.style.height = "0";
     stimulusElement.style.borderLeft = "0";
     stimulusElement.style.borderRight = "0";
     stimulusElement.style.borderBottom = "0";
+
+   
 }
 
 function getRandomInteger(min, max) {
@@ -135,28 +194,31 @@ function startTestTrial() {
 }
 
 function showStimulus() {
-    if (chance == 2 || chance ==1) {
+    if (chance == 2 || chance == 1) {
         setStimulusShapeTriangle();
-    } else if (chance == 3 || chance == 4) {
+    } 
+    else if (chance == 3 || chance == 4) {
         setStimulusShapeSquare();
     }
     stimulusIsVisible = true;
     stimulusTimestamp = Date.now();
 }
 
-function recordStimulusReactionTime() {
+function recordStimulusReactionTime(timeslist) {
     let deltaTime = Date.now() - stimulusTimestamp;
-    times.push(deltaTime);
+    timeslist.push(deltaTime);
     timeElement.textContent = deltaTime + ' ms';
 }
 
 function startExperiment() {
     clearResults(); // clear results of any previous tests
-    instructionElement.textContent = "Press space when a square appears! Press 'a' for results!";
+    instructionElement.textContent = "Press space when a square appears and ignore triangles! Press 'a' for results!";
 
     // reset data and start tests
     times = [];
+    timesPurple = [];
     experimentActive = true;
+    errorCounter = []
     startTestTrial();
 }
 
@@ -165,7 +227,7 @@ function stopExperiment() {
     clearTimeout(testStimulusTimeout);
     stimulusIsVisible = false;
     experimentActive = false;
-
+    resetStimulusShape();
     // reset instruction and show results
     instruction.textContent = 'Press space to start!';
     showResults();
@@ -182,8 +244,16 @@ window.addEventListener('keydown', (event) => {
         }
 
         if (stimulusIsVisible) {
-            // record reaction time
-            recordStimulusReactionTime();
+
+            if(chance == 1 || chance == 2) {
+                errorCounter++;
+            }
+            else if(chance == 3) {
+                recordStimulusReactionTime(timesPurple);
+            }
+            else if(chance == 4) {
+                recordStimulusReactionTime(times);
+            }
             // start next trial
             startTestTrial();
         }
