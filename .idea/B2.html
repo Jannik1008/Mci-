@@ -42,7 +42,7 @@ let testStimulusTimeout;
 let times = [];
 //recorded reaction times in milliseconds for purple squares
 let timesPurple = [];
-let errorCounter = [];
+let errorCounter = 0;
 
 //if true, there's currently a timeout for a triangle
 let triangleTimeout = false;
@@ -100,30 +100,30 @@ function showResults() {
 
     //Displaying the mean
     if(times.length == 0) {
-        meanElement.textContent = '';
+        meanElement.textContent = 'Mean(Orange Square): /';
     }
     else {
         meanElement.textContent = 'Mean(Orange Square): ' + Math.round(meanDeltaTime) + ' ms';
     }
     if(timesPurple.length == 0) {
-        meanElementPurple.textContent = '';
+        meanElementPurple.textContent = 'Mean(purple Square): /';
     }
     else {
-        meanElementPurple.textContent = 'Mean(purple Square)' + Math.round(meanDeltaTimePurple) + 'ms';
+        meanElementPurple.textContent = 'Mean(purple Square): ' + Math.round(meanDeltaTimePurple) + 'ms';
     }
     
     //Displaying the Standard Deviation
     if(times.length == 0) {
-        stdDevElement.textContent = '';
+        stdDevElement.textContent = 'SD(Orange Square): /';
     }
     else {
         stdDevElement.textContent = 'SD(Orange Square): ' + Math.round(stdDev) + ' ms';
     }
     if(timesPurple.length == 0) {
-        stdDevElementPurple.textContent = '';
+        stdDevElementPurple.textContent = 'SD(Purple Square): /';
     }
     else {
-    stdDevElementPurple.textContent = 'SD(Purple Square)' + Math.round(stdDevPurple) + ' ms';
+    stdDevElementPurple.textContent = 'SD(Purple Square): ' + Math.round(stdDevPurple) + ' ms';
     }
 
     errorElement.textContent = 'Error rate(Triangles): ' + errorCounter;
@@ -202,10 +202,11 @@ function startTestTrial() {
     clearTimeout(testStimulusTimeout);
     chance = zufaelligeZahl();
 
-
+    if(experimentActive) {
     // schedule the stimulus to appear after a random amount of time
     let timeToWaitInSeconds = Math.random() * 4 + 2; // 2 - 6s
     testStimulusTimeout = setTimeout(showStimulus, timeToWaitInSeconds * 1000);
+    }
 }
 
 function showStimulus() {
@@ -241,7 +242,7 @@ function startExperiment() {
     times = [];
     timesPurple = [];
     experimentActive = true;
-    errorCounter = []
+    errorCounter = 0
     startTestTrial();
 }
 
@@ -255,7 +256,6 @@ function stopExperiment() {
     // reset instruction and show results
     instruction.textContent = 'Press space to start!';
     showResults();
-    resetStimulusShape();
 }
 
 window.addEventListener('keydown', (event) => {
@@ -287,7 +287,7 @@ window.addEventListener('keydown', (event) => {
         if (experimentActive) {
             // stop the experiment and show results
             stopExperiment();
-            stimulusElement.textContent = '';
+            
         }
     }  else if (event.key === 'b') {
         if(experimentActive) {
