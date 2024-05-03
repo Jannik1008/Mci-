@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Human Capabilities - Reaction test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        #stimulus img {
+            min-height: 300px;
+            min-width: 300px;
+            max-height: 500px;
+            max-width: 600px;
+            height: auto;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+<h1 id="title">User Study - Complex Stimuli</h1>
+<h2 id="instruction">Press space to start!</h2>
+<h2 id="imageCounter"></h2>
+<div id="stimulus"></div>
+<p id="time"></p>
+<p id="count"></p>
+<p id="error"></p>
+<p id="mean"></p>
+<p id="sd"></p>
+
+<script>
+    // if true, the experiment is currently active
+    let experimentActive = false;
+
+    // if true, the stimulus is currently visible and the user should press space
+    let stimulusIsVisible = false;
+
+    // time at which the stimulus last appeared (in milliseconds, see Date.now())
+    let stimulusTimestamp;
+
+    // recorded reaction times in milliseconds
+    let times = [];
+
+    // counters for wrong answers per country and total errors
+    let totalErrors = 0;
+    let germanErrors = 0;
+    let chinaErrors = 0;
+    let mexicoErrors = 0;
+
+    // current image number
+    let currentImageNumber = 0;
+
+    // total image count
+    const totalImages = 30;
+
+    // counter for the current image
+    let currentCountry;
+
+    // Array of images
+    const images = [
+        //Germany
+        {path: 'images/germany1.jpg', country: 'Germany'},
+        {path: 'images/germany2.jpg', country: 'Germany'},
+        {path: 'images/germany3.jpg', country: 'Germany'},
+        {path: 'images/germany4.jpg', country: 'Germany'},
+        {path: 'images/germany5.jpg', country: 'Germany'},
+        {path: 'images/germany6.jpg', country: 'Germany'},
+        {path: 'images/germany7.jpg', country: 'Germany'},
+        {path: 'images/germany8.jpg', country: 'Germany'},
+        {path: 'images/germany9.jpg', country: 'Germany'},
+        {path: 'images/germany10.JPG', country: 'Germany'},
+
+        //China
+        {path: 'images/china1.jpg', country: 'China'},
+        {path: 'images/china2.jpg', country: 'China'},
+        {path: 'images/china3.jpg', country: 'China'},
+        {path: 'images/china4.jpg', country: 'China'},
+        {path: 'images/china5.jpg', country: 'China'},
+        {path: 'images/china6.jpg', country: 'China'},
+        {path: 'images/china7.jpg', country: 'China'},
+        {path: 'images/china8.jpg', country: 'China'},
+        {path: 'images/china9.jpg', country: 'China'},
+        {path: 'images/china10.jpg', country: 'China'},
+
+        //Mexico
+        {path: 'images/mexico1.jpg', country: 'Mexico'},
+        {path: 'images/mexico2.jpeg', country: 'Mexico'},
+        {path: 'images/mexico3.jpg', country: 'Mexico'},
+        {path: 'images/mexico4.jpg', country: 'Mexico'},
+        {path: 'images/mexico5.jpg', country: 'Mexico'},
+        {path: 'images/mexico6.jpg', country: 'Mexico'},
+        {path: 'images/mexico7.jpg', country: 'Mexico'},
+        {path: 'images/mexico8.jpg', country: 'Mexico'},
+        {path: 'images/mexico9.jpg', country: 'Mexico'},
+        {path: 'images/mexico10.jpg', country: 'Mexico'}
+    ];
+
+    // DOM elements
+    let timeElement = document.getElementById('time');
+    let countElement = document.getElementById('count');
+    let meanElement = document.getElementById('mean');
+    let stdDevElement = document.getElementById('sd');
+    let instructionElement = document.getElementById('instruction');
+    let stimulusElement = document.getElementById('stimulus');
+    let errorElement = document.getElementById('error');
+    let currentImageElement = document.getElementById('imageCounter');
+
+    function getMean(data) {
+        let sum = 0;
+        for (let value of data) sum += value;
+        return sum / data.length;
+    }
+
+    function getStandardDeviation(data) {
+        let mean = getMean(data);
+        let squareSum = 0;
+        for (let value of data) squareSum += (value - mean) ** 2;
+        return Math.sqrt(squareSum / data.length);
+    }
+
+    function clearResults() {
+        timeElement.textContent = '';
+        countElement.textContent = '';
+        meanElement.textContent = '';
+        stdDevElement.textContent = '';
+        germanErrors = 0;
+        chinaErrors = 0;
+        mexicoErrors = 0;
+        errorElement.textContent = '';
+    }
+
+    function showResults() {
+        let meanDeltaTime = getMean(times);
+        let stdDev = getStandardDeviation(times);
+
+        countElement.textContent = 'Count: ' + times.length;
+        meanElement.textContent = 'Mean: ' + Math.round(meanDeltaTime) + ' ms';
+        stdDevElement.textContent = 'SD: ' + Math.round(stdDev) + ' ms';
+
+        totalErrors = germanErrors + chinaErrors + mexicoErrors;
+        // Output errors per country
+        errorElement.textContent += 'Total Errors: ' + totalErrors;
+        errorElement.textContent += ' | Germany Errors: ' + germanErrors;
+        errorElement.textContent += ' | China Errors: ' + chinaErrors;
+        errorElement.textContent += ' | Mexico Errors: ' + mexicoErrors;
+    }
+
+    function setStimulusImage(imageSrc) {
+        stimulusElement.innerHTML = '<img src="' + imageSrc + '">';
+    }
+
+    // Shuffle function to randomize the order of the images
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startTestTrial() {
+        // reset the stimulus
+        stimulusElement.innerHTML = '';
+        stimulusIsVisible = false;
+
+        currentImageNumber++;
+        if (currentImageNumber <= totalImages) {
+            showStimulus();
+            currentImageElement.textContent = 'Current Image: ' + currentImageNumber + '/' + totalImages;
+        } else {
+            stopExperiment();
+        }
+    }
+
+    function showStimulus() {
+        let randomImage = shuffledImages.pop();
+        currentCountry = randomImage.country;
+        setStimulusImage(randomImage.path);
+        stimulusIsVisible = true;
+        stimulusTimestamp = Date.now();
+    }
+
+    function recordStimulusReactionTime() {
+        let deltaTime = Date.now() - stimulusTimestamp;
+        times.push(deltaTime);
+        timeElement.textContent = deltaTime + ' ms';
+    }
+
+    function startExperiment() {
+        // clear results of any previous tests
+        clearResults();
+        instructionElement.textContent = "Press 'd' for German dish, 'f' for Chinese, 'g' for Mexican. Press 'a' for results!";
+
+        // shuffle the images array
+        shuffledImages = shuffleArray(images.slice()); // Make a copy to not modify the original array
+
+        // reset data and start experiment
+        times = [];
+        currentImageNumber = 0;
+        experimentActive = true;
+        startTestTrial();
+    }
+
+    function stopExperiment() {
+        // stop the experiment and show results
+        instruction.textContent = 'Thank you for participating. To restart the experiment, press space.';
+        currentImageElement.textContent = '';
+        showResults();
+        experimentActive = false;
+    }
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === ' ') {
+            if (!experimentActive) {
+                // start the experiment if it wasn't active
+                startExperiment();
+                return;
+            }
+        } else if (event.key === 'a') {
+            if (experimentActive) {
+                // stop the experiment and show results
+                stopExperiment();
+            }
+        } else if (event.key === 'd' || event.key === 'f' || event.key === 'g') { // Germany, China, Mexico
+            if (stimulusIsVisible) {
+                recordStimulusReactionTime();
+                let country = currentCountry;
+                if (event.key === 'd' && country === 'Germany') {
+                    // Correct answer
+                } else if (event.key === 'f' && country === 'China') {
+                    // Correct answer
+                } else if (event.key === 'g' && country === 'Mexico') {
+                    // Correct answer
+                } else {
+                    // Wrong answer
+                    if (country === 'Germany') {
+                        germanErrors++;
+                    } else if (country === 'China') {
+                        chinaErrors++;
+                    } else if (country === 'Mexico') {
+                        mexicoErrors++;
+                    }
+                }
+                startTestTrial();
+            }
+        }
+    });
+</script>
+</body>
+</html>
