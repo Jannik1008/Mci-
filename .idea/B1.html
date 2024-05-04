@@ -65,7 +65,7 @@
         let correlation = calculateCorrelation();
 
         resultsElement.textContent = `Mean Reaction Time: ${Math.round(meanReactionTime)} ms | Standard Deviation: ${Math.round(stdDev)} ms | Errors: ${errors}`;
-        correlationElement.textContent = `Correlation: ${correlation}`;
+        correlationElement.textContent = `Correlation: ${correlation.toFixed(3)}`;
     }
 
     function getMean(data) {
