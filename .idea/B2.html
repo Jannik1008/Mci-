@@ -16,10 +16,13 @@ body {
         <h2 id="instruction2">React to squares and ignore triangles!</h2>
         <p id="time"></p>
         <div id="stimulus"></div>
+        <p id="countAll"></p>
         <p id="countOrange"></p>
         <p id="countPurple"></p>
+        <p id="meanAll"></p>
         <p id="meanOrange"></p>
         <p id="meanPurple"></p>
+        <p id="sdAll"></p>
         <p id="sdOrange"></p>
         <p id="sdPurple"></p>
         <p id ="error rate"></p>
@@ -42,16 +45,20 @@ let testStimulusTimeout;
 let times = [];
 //recorded reaction times in milliseconds for purple squares
 let timesPurple = [];
+let timesAll = []
 let errorCounter = 0;
 
 //if true, there's currently a timeout for a triangle
 let triangleTimeout = false;
 // DOM elements
 let timeElement = document.getElementById('time');
+let countElementAll = document.getElementById('countAll');
 let countElement = document.getElementById('countOrange');
 let countElementPurple = document.getElementById('countPurple');
+let meanElementAll = document.getElementById('meanAll');
 let meanElement = document.getElementById('meanOrange');
 let meanElementPurple = document.getElementById('meanPurple');
+let stdDevElementAll = document.getElementById('sdAll');
 let stdDevElement = document.getElementById('sdOrange');
 let stdDevElementPurple = document.getElementById('sdPurple');
 let instructionElement = document.getElementById('instruction');
@@ -77,28 +84,43 @@ function getStandardDeviation(data) {
 
 function clearResults() {
     timeElement.textContent = '0 ms';
+    countElementAll.textContent = '';
     countElement.textContent = '';
     countElementPurple.textContent = '';
+    meanElementAll.textContent = '';    
     meanElement.textContent = '';
     meanElementPurple.textContent = '';
+    stdDevElementAll.textContent = '';
     stdDevElement.textContent = '';
     stdDevElementPurple.textContent = '';
     errorElement.textContent = '';
 }
 
 function showResults() {
+    let timesAll = [...times, ...timesPurple];
+
     let meanDeltaTime = getMean(times);
     let meanDeltaTimePurple = getMean(timesPurple);
+    let meanDeltaTimeAll = getMean(timesAll);
 
+    let stdDevAll = getStandardDeviation(timesAll);
     let stdDev = getStandardDeviation(times);
     let stdDevPurple = getStandardDeviation(timesPurple);
 
     timeElement.textContent = '';
 
+    //Displaying the count
+    countElementAll.textContent = 'Count(All): ' + (times.length + timesPurple.length);
     countElement.textContent = 'Count(Orange Square): ' + times.length;
     countElementPurple.textContent = 'Count(Purple Square): ' + timesPurple.length;
 
     //Displaying the mean
+    if(times.length == 0 && timesPurple.length == 0) {
+        meanElementAll.textContent = 'Mean(All): /';
+    }
+    else {
+        meanElementAll.textContent = 'Mean(All): ' + Math.round(meanDeltaTimeAll) + ' ms';
+    }
     if(times.length == 0) {
         meanElement.textContent = 'Mean(Orange Square): /';
     }
@@ -113,6 +135,12 @@ function showResults() {
     }
     
     //Displaying the Standard Deviation
+    if(times.length == 0 && timesPurple.length == 0) {
+        stdDevElementAll.textContent = 'SD(All): /';
+    }
+    else {
+        stdDevElementAll.textContent = 'SD(All): ' + Math.round(stdDevAll) + ' ms';
+    } 
     if(times.length == 0) {
         stdDevElement.textContent = 'SD(Orange Square): /';
     }
@@ -241,6 +269,7 @@ function startExperiment() {
     // reset data and start tests
     times = [];
     timesPurple = [];
+    timesAll = [];
     experimentActive = true;
     errorCounter = 0
     startTestTrial();
