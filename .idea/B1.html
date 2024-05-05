@@ -16,7 +16,7 @@
         .rectangle {
             width: 50px;
             height: 50px;
-            background-color: white; /* initial color */
+            background-color: white;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -28,7 +28,8 @@
 </head>
 <body>
 <h1>Simple Reaction Time Experiment</h1>
-<p>Press space bar to start the experiment or when the rectangle becomes visible!</p>
+<p>Press the space bar to start the expansion. When you see a rectangle, press the space bar. Press "a" to end the expirment
+    and view your results. Otherwise the expirment will end after 30 attempts </p>
 <div id="canvas">
 </div>
 <p id="results"></p>
@@ -147,7 +148,7 @@
                     resetStimulus();
                     startTestTrial();
                 } else {
-                    errors++; // Increment error count if space bar pressed without stimulus
+                    errors++;
                 }
             } else if (event.key === 'a') {
                 stopExperiment();
@@ -174,7 +175,7 @@
         reactionTimes = [];
         distances = [];
         errors = 0;
-        reactionTimeElement.textContent = ''; // Zurücksetzen der Reaktionszeit-Anzeige
+        reactionTimeElement.textContent = '';
         startTestTrial();
     }
 
