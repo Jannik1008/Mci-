@@ -164,8 +164,9 @@
         stimulusIsVisible = false;
 
         currentImageNumber++;
-        if (currentImageNumber <= totalImages) {
-            showStimulus();
+        if (currentImageNumber <= totalImages && experimentActive === true) {
+            let timeToWaitInSeconds = Math.random() * 4 + 2; // 2 - 6s
+            testStimulusTimeout = setTimeout(showStimulus, timeToWaitInSeconds * 1000);
             currentImageElement.textContent = 'Current Image: ' + currentImageNumber + '/' + totalImages;
         } else {
             stopExperiment();
@@ -202,11 +203,14 @@
     }
 
     function stopExperiment() {
+        clearTimeout(testStimulusTimeout);
+        stimulusIsVisible = false;
+        experimentActive = false;
         // stop the experiment and show results
         instruction.textContent = 'Thank you for participating. To restart the experiment, press space.';
         currentImageElement.textContent = '';
         showResults();
-        experimentActive = false;
+
     }
 
     window.addEventListener('keydown', (event) => {
