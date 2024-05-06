@@ -41,6 +41,8 @@ let stimulusTimestamp;
 // Used to cancel tests when the experiment ends.
 let testStimulusTimeout;
 
+//Amount of tries in the current experiment run
+let runs = 0;
 // recorded reaction times in milliseconds for orange squares
 let times = [];
 //recorded reaction times in milliseconds for purple squares
@@ -110,7 +112,8 @@ function showResults() {
     timeElement.textContent = '';
 
     //Displaying the count
-    countElementAll.textContent = 'Count(All): ' + (times.length + timesPurple.length);
+    
+    countElementAll.textContent = 'Count(Purple + Orange Square): ' + (times.length + timesPurple.length);
     countElement.textContent = 'Count(Orange Square): ' + times.length;
     countElementPurple.textContent = 'Count(Purple Square): ' + timesPurple.length;
 
@@ -229,7 +232,9 @@ function startTestTrial() {
     triangleTimeout = false;
     clearTimeout(testStimulusTimeout);
     chance = zufaelligeZahl();
-
+    if(runs == 30) {
+        stopExperiment();
+    }
     if(experimentActive) {
     // schedule the stimulus to appear after a random amount of time
     let timeToWaitInSeconds = Math.random() * 4 + 3; // 2 - 6s
@@ -238,16 +243,13 @@ function startTestTrial() {
 }
 
 function showStimulus() {
+    runs = runs + 1;
     if (chance === 2 || chance === 1) {
         setStimulusShapeTriangle();
         triangleTimeout = true;
-        if(experimentActive == true){
-            randomNumber = Math.random()*4 + 3;
-            setTimeout(startTestTrial, randomNumber*1000);
-        }
-        else {
-            return;
-        }
+        randomNumber = Math.random()*4 + 3;
+        setTimeout(startTestTrial, randomNumber*1000);
+        
     } 
     else if (chance === 3 || chance === 4) {
         setStimulusShapeSquare();
@@ -267,6 +269,7 @@ function startExperiment() {
     instructionElement.textContent = "Press 'space' when a square appears and ignore triangles! Press 'a' for results!";
     instructionElement2.textContent = "Press 'b' when a triangle appears to skip forward."
     // reset data and start tests
+    runs = 0;
     times = [];
     timesPurple = [];
     timesAll = [];
@@ -290,6 +293,7 @@ function stopExperiment() {
 window.addEventListener('keydown', (event) => {
 
     if (event.key === ' ') {
+        
         // the user pressed the space key
         if (!experimentActive) {
             // start the experiment if it wasn't active
@@ -319,6 +323,7 @@ window.addEventListener('keydown', (event) => {
             
         }
     }  else if (event.key === 'b') {
+        
         if(experimentActive) {
            if(triangleTimeout) {
             startTestTrial();
