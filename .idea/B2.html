@@ -157,7 +157,7 @@ function showResults() {
     stdDevElementPurple.textContent = 'SD(Purple Square): ' + Math.round(stdDevPurple) + ' ms';
     }
 
-    errorElement.textContent = 'Error rate(Triangles): ' + errorCounter;
+    errorElement.textContent = 'Error rate: ' + errorCounter;
     
 }
 
@@ -300,7 +300,10 @@ window.addEventListener('keydown', (event) => {
             startExperiment();
             return;
         }
-
+        if (!stimulusIsVisible) {
+            errorCounter++;
+            timeElement.textContent = "Error! (Button pressed too early)";
+        }
         if (stimulusIsVisible) {
 
             if(chance === 1 || chance === 2) {
