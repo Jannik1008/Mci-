@@ -25,6 +25,8 @@
 <p id="time"></p>
 <p id="count"></p>
 <p id="error"></p>
+<p id="errorRate"></p>
+<p id="totalErrors"></p>
 <p id="mean"></p>
 <p id="sd"></p>
 
@@ -103,6 +105,8 @@
     let instructionElement = document.getElementById('instruction');
     let stimulusElement = document.getElementById('stimulus');
     let errorElement = document.getElementById('error');
+    let errorRateElement = document.getElementById('errorRate');
+    let totalErrorsElement = document.getElementById('totalErrors');
     let currentImageElement = document.getElementById('imageCounter');
 
     function getMean(data) {
@@ -126,7 +130,10 @@
         germanErrors = 0;
         chinaErrors = 0;
         mexicoErrors = 0;
+        totalErrors = 0;
         errorElement.textContent = '';
+        errorRateElement.textContent = '';
+        totalErrorsElement.textContent = '';
     }
 
     function showResults() {
@@ -137,12 +144,17 @@
         meanElement.textContent = 'Mean: ' + Math.round(meanDeltaTime) + ' ms';
         stdDevElement.textContent = 'SD: ' + Math.round(stdDev) + ' ms';
 
-        totalErrors = germanErrors + chinaErrors + mexicoErrors;
+        errorElement.textContent += 'Errors: ' + totalErrors;
+
         // Output errors per country
-        errorElement.textContent += 'Total Errors: ' + totalErrors;
-        errorElement.textContent += ' | Germany Errors: ' + germanErrors;
-        errorElement.textContent += ' | China Errors: ' + chinaErrors;
-        errorElement.textContent += ' | Mexico Errors: ' + mexicoErrors;
+        totalErrorsElement.textContent += 'Total Germany Errors: ' + germanErrors;
+        totalErrorsElement.textContent += ' | Total China Errors: ' + chinaErrors;
+        totalErrorsElement.textContent += ' | Total Mexico Errors: ' + mexicoErrors;
+
+        // Output error rate per country
+        errorRateElement.textContent = 'Error Rate Germany: ' + (germanErrors / 10 *100) + ' %';
+        errorRateElement.textContent += ' | Error Rate China: ' + (chinaErrors / 10 *100) + ' %';
+        errorRateElement.textContent += ' | Error Rate Mexico: ' + (mexicoErrors / 10 *100) + ' %';
     }
 
     function setStimulusImage(imageSrc) {
@@ -167,7 +179,6 @@
         if (currentImageNumber <= totalImages && experimentActive === true) {
             let timeToWaitInSeconds = Math.random() * 4 + 2; // 2 - 6s
             testStimulusTimeout = setTimeout(showStimulus, timeToWaitInSeconds * 1000);
-            currentImageElement.textContent = 'Current Image: ' + currentImageNumber + '/' + totalImages;
         } else {
             stopExperiment();
         }
@@ -177,6 +188,7 @@
         let randomImage = shuffledImages.pop();
         currentCountry = randomImage.country;
         setStimulusImage(randomImage.path);
+        currentImageElement.textContent = 'Current Image: ' + currentImageNumber + '/' + totalImages;
         stimulusIsVisible = true;
         stimulusTimestamp = Date.now();
     }
@@ -239,13 +251,18 @@
                     // Wrong answer
                     if (country === 'Germany') {
                         germanErrors++;
+                        totalErrors++;
                     } else if (country === 'China') {
                         chinaErrors++;
+                        totalErrors++;
                     } else if (country === 'Mexico') {
                         mexicoErrors++;
+                        totalErrors++;
                     }
                 }
                 startTestTrial();
+            } else {
+                    totalErrors++;
             }
         }
     });
