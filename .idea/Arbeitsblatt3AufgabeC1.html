@@ -1,27 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator Layout 1</title>
+    <title>Rechner Layout 1</title>
     <style>
         .calculator {
             display: grid;
-            grid-template-columns: repeat(14, auto); /* 14 Spalten für alle Buttons */
+            grid-template-columns: repeat(14, auto);
             gap: 5px;
-            max-width: 900px; /* Breite des gesamten Containers, um Platz für die Buttons zu schaffen */
-            margin: auto; /* Zentrierung des Containers */
+            max-width: 900px;
+            margin: auto;
             margin-left: 10px;
-
         }
         .calculator button {
-            width: 80px; /* Breite für die Zahlenbuttons beibehalten */
+            width: 80px;
             height: 80px;
             font-size: 24px;
             cursor: pointer;
         }
         .display {
-            grid-column: span 14; /* Spannweite über alle 14 Spalten */
+            grid-column: span 14;
             height: 80px;
             text-align: right;
             padding-right: 10px;
@@ -30,7 +29,7 @@
             border: 1px solid #ccc;
         }
         .problem {
-            grid-column: span 14; /* Spannweite über alle 14 Spalten */
+            grid-column: span 14;
             height: 40px;
             text-align: center;
             padding-right: 10px;
@@ -40,52 +39,72 @@
             margin-bottom: 10px;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="calculator">
     <div class="problem" id="problem"></div>
     <div class="display" id="display">0</div>
-    <button onclick="inputDigit('0')">0</button>
-    <button onclick="inputDigit('1')">1</button>
-    <button onclick="inputDigit('2')">2</button>
-    <button onclick="inputDigit('3')">3</button>
-    <button onclick="inputDigit('4')">4</button>
-    <button onclick="inputDigit('5')">5</button>
-    <button onclick="inputDigit('6')">6</button>
-    <button onclick="inputDigit('7')">7</button>
-    <button onclick="inputDigit('8')">8</button>
-    <button onclick="inputDigit('9')">9</button>
-    <button onclick="inputDigit('.')">.</button>
-    <button onclick="handleOperator('*')">*</button>
-    <button onclick="calculateResult()">=</button>
+    <button data-row="3" data-col="0" onclick="inputDigit('0')">0</button>
+    <button data-row="2" data-col="0" onclick="inputDigit('1')">1</button>
+    <button data-row="2" data-col="1" onclick="inputDigit('2')">2</button>
+    <button data-row="2" data-col="2" onclick="inputDigit('3')">3</button>
+    <button data-row="1" data-col="0" onclick="inputDigit('4')">4</button>
+    <button data-row="1" data-col="1" onclick="inputDigit('5')">5</button>
+    <button data-row="1" data-col="2" onclick="inputDigit('6')">6</button>
+    <button data-row="0" data-col="0" onclick="inputDigit('7')">7</button>
+    <button data-row="0" data-col="1" onclick="inputDigit('8')">8</button>
+    <button data-row="0" data-col="2" onclick="inputDigit('9')">9</button>
+    <button data-row="3" data-col="1" onclick="inputDigit('.')">.</button>
+    <button data-row="3" data-col="2" onclick="handleOperator('*')">*</button>
+    <button data-row="3" data-col="3" onclick="calculateResult()">=</button>
 </div>
 <script>
     let displayValue = '0';
     let firstOperand = null;
     let waitingForSecondOperand = false;
     let operator = null;
+    let lastTime = null;
+    let lastButton = null;
+    let width = 80; // Breite der Tasten
+    let data = [];
+    let equalPressCount = 0;
 
     function inputDigit(digit) {
-        const display = document.getElementById('display');
+        const currentButton = event.target;
+        const mt = recordTime();
+        if (lastButton) {
+            const distance = calculateDistance(lastButton, currentButton);
+            const id = distance === 0 ? 0 : Math.log2((2 * distance) / width);
+            saveData(id, mt);
+        }
+        lastButton = currentButton;
 
+        const display = document.getElementById('display');
         if (waitingForSecondOperand === true) {
             displayValue = digit;
             waitingForSecondOperand = false;
         } else {
             displayValue = displayValue === '0' || displayValue === String(firstOperand) ? digit : displayValue + digit;
         }
-
         display.innerText = displayValue;
     }
 
     function handleOperator(nextOperator) {
-        const inputValue = parseFloat(displayValue);
+        const currentButton = event.target;
+        const mt = recordTime();
+        if (lastButton) {
+            const distance = calculateDistance(lastButton, currentButton);
+            const id = distance === 0 ? 0 : Math.log2((2 * distance) / width);
+            saveData(id, mt);
+        }
+        lastButton = currentButton;
 
+        const inputValue = parseFloat(displayValue);
         if (operator && waitingForSecondOperand) {
             operator = nextOperator;
             return;
         }
-
         if (firstOperand == null && !isNaN(inputValue)) {
             firstOperand = inputValue;
         } else if (operator) {
@@ -93,7 +112,6 @@
             displayValue = `${parseFloat(result.toFixed(7))}`;
             firstOperand = result;
         }
-
         waitingForSecondOperand = true;
         operator = nextOperator;
     }
@@ -115,7 +133,12 @@
             waitingForSecondOperand = false;
             document.getElementById('display').innerText = displayValue;
 
-            // Neue Aufgabe generieren
+            equalPressCount++;
+            if (equalPressCount >= 5) {
+                generateExcel();
+                equalPressCount = 0;
+            }
+
             generateProblem();
         }
     }
@@ -131,6 +154,41 @@
         const problem = `${num1} * ${num2}`;
         document.getElementById('problem').innerText = problem;
         return problem;
+    }
+
+    function recordTime() {
+        const currentTime = new Date().getTime();
+        let mt = 0;
+        if (lastTime) {
+            mt = currentTime - lastTime;
+        }
+        lastTime = currentTime;
+        return mt;
+    }
+
+    function calculateDistance(button1, button2) {
+        const row1 = parseInt(button1.getAttribute('data-row'));
+        const col1 = parseInt(button1.getAttribute('data-col'));
+        const row2 = parseInt(button2.getAttribute('data-row'));
+        const col2 = parseInt(button2.getAttribute('data-col'));
+
+        const deltaX = col2 - col1;
+        const deltaY = row2 - row1;
+
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY) * 80; // 80px ist die Breite/Höhe einer Taste
+    }
+
+    function saveData(id, mt) {
+        data.push({ id: id, mt: mt });
+        console.log(`ID: ${id}, MT: ${mt}`); // Zum Debuggen
+    }
+
+    function generateExcel() {
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Daten');
+        XLSX.writeFile(workbook, 'daten.xlsx');
+        data = []; // Daten zurücksetzen
     }
 
     window.onload = function() {
