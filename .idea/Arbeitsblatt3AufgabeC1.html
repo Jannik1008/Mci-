@@ -69,8 +69,17 @@
     let width = 80; // Breite der Tasten
     let data = [];
     let equalPressCount = 0;
+    let currentString = "";
+    let currentProblem = "";
+
+    function substring_at(string, substring, position) {
+        let slice = string.slice(position, position + substring.length);
+        return slice === substring
+    }
 
     function inputDigit(digit) {
+        if (substring_at(currentProblem, (currentString + digit), 0)) {
+            currentString = currentString + digit;
         const currentButton = event.target;
         const mt = recordTime();
         if (lastButton) {
@@ -88,9 +97,12 @@
             displayValue = displayValue === '0' || displayValue === String(firstOperand) ? digit : displayValue + digit;
         }
         display.innerText = displayValue;
-    }
+        }}
+    
 
     function handleOperator(nextOperator) {
+        if(substring_at(currentProblem, (currentString + " * "), 0)) {
+            currentString = currentString + " * ";
         const currentButton = event.target;
         const mt = recordTime();
         if (lastButton) {
@@ -115,6 +127,7 @@
         waitingForSecondOperand = true;
         operator = nextOperator;
     }
+    }
 
     function calculate(first, second, operator) {
         if (operator === '*') {
@@ -124,6 +137,7 @@
     }
 
     function calculateResult() {
+        if(currentProblem === currentString) {
         if (operator && waitingForSecondOperand === false) {
             const inputValue = parseFloat(displayValue);
             const result = calculate(firstOperand, inputValue, operator);
@@ -142,6 +156,7 @@
             generateProblem();
         }
     }
+}
 
     function getRandomNumber() {
         return (Math.random() * 9).toFixed(2);
@@ -149,10 +164,13 @@
 
     function generateProblem() {
         displayValue = '0'; // Reset displayValue
+        currentString = "";
         const num1 = getRandomNumber();
         const num2 = getRandomNumber();
+        number1 = String(num1);
         const problem = `${num1} * ${num2}`;
         document.getElementById('problem').innerText = problem;
+        currentProblem = String(problem);
         return problem;
     }
 
